@@ -9,82 +9,150 @@ namespace ipc
 
         msg_pub_ = this->create_publisher<std_msgs::msg::String>("/icp_msg", 1);
 
+        i = 0;
+
         pub_timer_ = this->create_wall_timer(std::chrono::milliseconds(500),
                                              std::bind(&IpcExample::pub_timer_callback, this),
                                              timers_callback_group_);
+    }
 
-        sub_timer_ = this->create_wall_timer(std::chrono::seconds(1),
-                                             std::bind(&IpcExample::sub_timer_callback, this),
-                                             timers_callback_group_);
+    IpcExample::~IpcExample()
+    {
+        if (socket_sub_thread_handler.joinable())
+        {
+            socket_sub_thread_handler.join(); // Ensure thread cleanup
+        }
+        close(socket_server_fd);
+        close(socket_pub_fd);
+        close(socket_sub_fd);
+        unlink(SOCKET_PATH_PUB);
+    }
 
-        addrlen = sizeof(address);
+    void IpcExample::configure_socket()
+    {
+        create_unix_socket_sub(socket_sub_fd, socket_sub_addr, SOCKET_PATH_SUB);
 
+        create_unix_socket_pub(socket_server_fd, socket_pub_fd, socket_pub_addr, SOCKET_PATH_PUB);
+
+        printf("[Subscriber] Calling thread...\n");
+
+        socket_sub_thread_handler = std::thread(&IpcExample::socket_sub_thread, this, socket_sub_fd);
+    }
+
+    void IpcExample::pub_timer_callback()
+    {
+        socket_msg_t msg = {.msg = "Hello ROS to OBU", .code = i};
+        i++;
+        publish_socket_pub(&msg, socket_pub_fd);
+    }
+
+    int IpcExample::create_unix_socket_sub(int &socket_fd, sockaddr_un_t &socket_addr, char *socket_path)
+    {
         // Create socket
-        if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0)
+        if ((socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
+        {
+            perror("Socket creation error");
+            return -1;
+        }
+
+        // Initializing socket structure with zeros
+        memset(&socket_addr, 0, sizeof(socket_addr));
+
+        // Selection UNIX domain socket type
+        socket_addr.sun_family = AF_UNIX;
+
+        // Setting socket address path
+        strncpy(socket_addr.sun_path, socket_path, strlen(socket_path));
+
+        printf("%s\n", socket_path);
+
+        // Connect to the socket server (publisher)
+        while (connect(socket_fd, (struct sockaddr *)&socket_addr, sizeof(socket_addr)) == -1)
+        {
+            if (i < N_TRY_CONNECT_PUB)
+            {
+                printf("Trying to reconnect...\n");
+                i++;
+                sleep(1);
+            }
+            else
+            {
+                perror("Connection failed");
+                return -1;
+            }
+        }
+        printf("[Subscriber] Publisher connected. Waiting messages...\n");
+
+        return 1;
+    }
+
+    int IpcExample::create_unix_socket_pub(int &socket_server_fd, int &socket_pub_fd, sockaddr_un_t &socket_addr, char *socket_path)
+    {
+        // Create socket
+        if ((socket_server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
         {
             perror("socket failed");
             exit(EXIT_FAILURE);
         }
 
-        // Bind the socket
-        address.sin_family = AF_INET;
-        address.sin_addr.s_addr = INADDR_ANY; // Bind to any interface
-        address.sin_port = htons(PORT);
+        // Initializing socket structure with zeros
+        memset(&socket_addr, 0, sizeof(socket_addr));
 
-        if (bind(server_fd, (struct sockaddr *)&address, sizeof(address)) < 0)
+        // Selection UNIX domain socket type
+        socket_addr.sun_family = AF_UNIX;
+
+        // Setting socket address path
+        strncpy(socket_addr.sun_path, socket_path, strlen(socket_path));
+
+        // Remove any socket file before start
+        unlink(socket_path);
+
+        // Bind the socket file descriptor with the socket address
+        if (bind(socket_server_fd, (struct sockaddr *)&socket_addr, sizeof(socket_addr)) == -1)
         {
             perror("bind failed");
-            close(server_fd);
             exit(EXIT_FAILURE);
         }
 
         // Listen for a connection
-        if (listen(server_fd, 3) < 0)
+        if (listen(socket_server_fd, 1) == -1)
         {
             perror("listen failed");
-            close(server_fd);
             exit(EXIT_FAILURE);
         }
 
-        // Accept a connection
-        if ((rx_socket = accept(server_fd, (struct sockaddr *)&address,
-                                (socklen_t *)&addrlen)) < 0)
+        // Waiting subscriber connection
+        printf("[Publisher] Waiting for subscriber to connect...\n");
+        if ((socket_pub_fd = accept(socket_server_fd, NULL, NULL)) == -1)
         {
             perror("accept failed");
             exit(EXIT_FAILURE);
         }
 
-        i = 0;
+        return 1;
     }
 
-    IpcExample::~IpcExample()
+    int IpcExample::socket_sub_thread(int socket_fd)
     {
-    }
+        printf("[Subscriber] Into in the thread...\n");
+        socket_msg_t buffer;
 
-    void IpcExample::sub_timer_callback()
-    {
-        // Receiving
-        read(rx_socket, &buffer, sizeof(buffer));
-        printf("|-Socket received\n");
-        printf("|--Client msg : %s\n", buffer.msg);
-        printf("|--Client code: %d\n\n", buffer.code);
-
-        std_msgs::msg::String msg;
-        msg.data = std::string(buffer.msg);
-        // RCLCPP_INFO(this->get_logger(), "Publishing IPC message | %d", buffer.code);
-        // RCLCPP_INFO(this->get_logger(), buffer.msg);
-        msg_pub_->publish(msg);
-    }
-
-    void IpcExample::pub_timer_callback()
-    {
-        // Sending
-        if (i < 15)
+        // Read server sockets when they arrive
+        while (read(socket_fd, &buffer, sizeof(buffer)) > 0)
         {
-            socket_msg_t msg = {"Hello from server", i++};
-            send(rx_socket, &msg, sizeof(msg), 0);
-            printf("|-Socket sent\n\n");
+            printf("\nNew message from publisher\n");
+            printf("Server msg : %s\n", buffer.msg);
+            printf("Server code: %d\n", buffer.code);
         }
+
+        return 1;
+    }
+    void IpcExample::publish_socket_pub(socket_msg_t *msg, int socket_pub_fd)
+    {
+        printf("\nSending message from publisher\n");
+        printf("Server msg : %s\n", msg->msg);
+        printf("Server code: %d\n", msg->code);
+        write(socket_pub_fd, msg, sizeof(*msg));
     }
 
 } // namespace ipc

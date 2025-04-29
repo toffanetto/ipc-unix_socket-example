@@ -13,3 +13,7 @@ CMakeUserPresets.json
 .vscode/settings.json
 c_ws/publisher
 c_ws/subscriber
+build/
+log/
+install/
+.vscode/c_cpp_properties.json

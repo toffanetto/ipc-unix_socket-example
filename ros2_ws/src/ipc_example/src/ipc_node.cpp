@@ -9,6 +9,8 @@ int main(int argc, char **argv)
 
   auto ipc_node = std::make_shared<IpcExample>();
 
+  ipc_node->configure_socket();
+
   rclcpp::spin(ipc_node);
 
   rclcpp::shutdown();

@@ -62,7 +62,9 @@ int main()
     sock_addr.sun_family = AF_UNIX;
 
     // Setting socket address path
-    strncpy(sock_addr.sun_path, SOCKET_PATH, strlen(SOCKET_PATH));
+    strncpy(sock_addr.sun_path, SOCKET_PATH_SUB, strlen(SOCKET_PATH_SUB));
+
+    printf("%s\n",SOCKET_PATH_SUB);
 
     // Connect to the socket server (publisher)
     while (connect(sock_fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1)
@@ -100,7 +102,9 @@ int main()
         sleep(1);
     }
 
-    close(sock_fd);
+    // Need to wait the thread ends before close the socket.
     pthread_join(subscriber_thread_handler, NULL);
+
+    close(sock_fd);
     return 0;
 }

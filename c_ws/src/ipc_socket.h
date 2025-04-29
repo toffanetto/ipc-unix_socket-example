@@ -10,6 +10,8 @@
 #include <unistd.h>
 
 #define SOCKET_PATH "/tmp/unix_socket"
+#define SOCKET_PATH_PUB "/tmp/socket_obu2ros"
+#define SOCKET_PATH_SUB "/tmp/socket_ros2obu"
 
 typedef struct socket_msg
 {

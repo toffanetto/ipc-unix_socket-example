@@ -32,10 +32,10 @@ int main()
     sock_addr.sun_family = AF_UNIX;
 
     // Setting socket address path
-    strncpy(sock_addr.sun_path, SOCKET_PATH, strlen(SOCKET_PATH));
+    strncpy(sock_addr.sun_path, SOCKET_PATH_PUB, strlen(SOCKET_PATH_PUB));
 
     // Remove any socket file before start
-    unlink(SOCKET_PATH);
+    unlink(SOCKET_PATH_PUB);
 
     // Bind the socket file descriptor with the socket address
     if (bind(server_fd, (struct sockaddr *)&sock_addr, sock_addrlen) == -1)
@@ -71,8 +71,10 @@ int main()
         sleep(2);
     }
 
+    sleep(30);
+
     close(rx_socket);
     close(server_fd);
-    unlink(SOCKET_PATH);
+    unlink(SOCKET_PATH_PUB);
     return 0;
 }

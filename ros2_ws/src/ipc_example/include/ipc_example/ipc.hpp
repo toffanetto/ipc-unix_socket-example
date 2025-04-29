@@ -7,21 +7,32 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <iostream>
 
 // Socket includes
+#include <stdio.h>
 #include <sys/types.h>
 #include <sys/socket.h>
-#include <netinet/in.h>
-#include <unistd.h>
+#include <sys/un.h>
+#include <thread>
 
-#define PORT 8080
-#define SERVER_IP "143.106.207.65"
+#define SOCKET_PATH_SUB "/tmp/socket_obu2ros"
+#define SOCKET_PATH_PUB "/tmp/socket_ros2obu"
+
+#define N_TRY_CONNECT_PUB 30
 
 typedef struct socket_msg
 {
     char msg[100];
     int code;
 } socket_msg_t;
+
+typedef struct sockaddr_un sockaddr_un_t;;
+
+// Creating struct with args for thread
+typedef struct{
+    int sock_fd;
+} subscriber_args_t;
 
 namespace ipc
 {
@@ -31,22 +42,35 @@ namespace ipc
         IpcExample();
         ~IpcExample();
 
+        void configure_socket();
+
     private:
-        int server_fd, rx_socket;
-        struct sockaddr_in address;
-        int addrlen;
-        socket_msg_t buffer;
+        int socket_server_fd;
+        int socket_pub_fd;
+        int socket_sub_fd;
+
+        sockaddr_un_t socket_pub_addr;
+        sockaddr_un_t socket_sub_addr;
+
+        std::thread socket_sub_thread_handler;
+        subscriber_args_t socket_sub_thread_args;
 
         int i;
 
         rclcpp::CallbackGroup::SharedPtr timers_callback_group_;
 
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr msg_pub_;
-        rclcpp::TimerBase::SharedPtr sub_timer_;
         rclcpp::TimerBase::SharedPtr pub_timer_;
 
         void pub_timer_callback();
-        void sub_timer_callback();
+
+        int create_unix_socket_sub(int &socket_fd, sockaddr_un_t &socket_addr, char *socket_path);
+        int create_unix_socket_pub(int &socket_server_fd, int &socket_pub_fd, sockaddr_un_t &socket_addr, char *socket_path);
+
+        void publish_socket_pub(socket_msg_t *msg, int socket_pub_fd);
+        
+        int socket_sub_thread(int );
+
     };
 } // namespace ipc
 #endif // ipc_example__ipc_HPP_
