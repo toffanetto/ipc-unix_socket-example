@@ -3,6 +3,7 @@
 #include <sys/socket.h>
 #include <sys/un.h>
 
+#include <pthread.h>
 
 #include <stdlib.h>
 #include <string.h>
@@ -15,6 +16,9 @@ typedef struct socket_msg
     char msg[100];
     int code;
 } socket_msg_t;
+
+
+
 
 
 

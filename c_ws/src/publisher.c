@@ -68,7 +68,7 @@ int main()
         printf("Server msg : %s\n", msg.msg);
         printf("Server code: %d\n", msg.code);
         write(rx_socket, &msg, sizeof(msg));
-        sleep(1);
+        sleep(2);
     }
 
     close(rx_socket);
