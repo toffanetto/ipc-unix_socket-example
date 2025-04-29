@@ -81,6 +81,9 @@ namespace ipc
                 return -1;
             }
         }
+
+        i = 0;
+
         printf("[Subscriber] Publisher connected. Waiting messages...\n");
 
         return 1;
@@ -147,6 +150,7 @@ namespace ipc
 
         return 1;
     }
+
     void IpcExample::publish_socket_pub(socket_msg_t *msg, int socket_pub_fd)
     {
         printf("\nSending message from publisher\n");
