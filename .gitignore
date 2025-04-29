@@ -10,3 +10,6 @@ compile_commands.json
 CTestTestfile.cmake
 _deps
 CMakeUserPresets.json
+.vscode/settings.json
+c_ws/publisher
+c_ws/subscriber
