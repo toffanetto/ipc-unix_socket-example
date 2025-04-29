@@ -33,10 +33,6 @@ namespace ipc
         create_unix_socket_sub(socket_sub_fd, socket_sub_addr, SOCKET_PATH_SUB);
 
         create_unix_socket_pub(socket_server_fd, socket_pub_fd, socket_pub_addr, SOCKET_PATH_PUB);
-
-        printf("[Subscriber] Calling thread...\n");
-
-        socket_sub_thread_handler = std::thread(&IpcExample::socket_sub_thread, this, socket_sub_fd);
     }
 
     void IpcExample::pub_timer_callback()
@@ -44,49 +40,6 @@ namespace ipc
         socket_msg_t msg = {.msg = "Hello ROS to OBU", .code = i};
         i++;
         publish_socket_pub(&msg, socket_pub_fd);
-    }
-
-    int IpcExample::create_unix_socket_sub(int &socket_fd, sockaddr_un_t &socket_addr, char *socket_path)
-    {
-        // Create socket
-        if ((socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
-        {
-            perror("Socket creation error");
-            return -1;
-        }
-
-        // Initializing socket structure with zeros
-        memset(&socket_addr, 0, sizeof(socket_addr));
-
-        // Selection UNIX domain socket type
-        socket_addr.sun_family = AF_UNIX;
-
-        // Setting socket address path
-        strncpy(socket_addr.sun_path, socket_path, strlen(socket_path));
-
-        printf("%s\n", socket_path);
-
-        // Connect to the socket server (publisher)
-        while (connect(socket_fd, (struct sockaddr *)&socket_addr, sizeof(socket_addr)) == -1)
-        {
-            if (i < N_TRY_CONNECT_PUB)
-            {
-                printf("Trying to reconnect...\n");
-                i++;
-                sleep(1);
-            }
-            else
-            {
-                perror("Connection failed");
-                return -1;
-            }
-        }
-
-        i = 0;
-
-        printf("[Subscriber] Publisher connected. Waiting messages...\n");
-
-        return 1;
     }
 
     int IpcExample::create_unix_socket_pub(int &socket_server_fd, int &socket_pub_fd, sockaddr_un_t &socket_addr, char *socket_path)
@@ -135,15 +88,62 @@ namespace ipc
         return 1;
     }
 
-    int IpcExample::socket_sub_thread(int socket_fd)
+    int IpcExample::create_unix_socket_sub(int &socket_fd, sockaddr_un_t &socket_addr, char *socket_path)
+    {
+        // Create socket
+        if ((socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
+        {
+            perror("Socket creation error");
+            return -1;
+        }
+
+        // Initializing socket structure with zeros
+        memset(&socket_addr, 0, sizeof(socket_addr));
+
+        // Selection UNIX domain socket type
+        socket_addr.sun_family = AF_UNIX;
+
+        // Setting socket address path
+        strncpy(socket_addr.sun_path, socket_path, strlen(socket_path));
+
+        printf("[Subscriber] Calling thread...\n");
+
+        // Calling socket subscriber thread
+        socket_sub_thread_handler = std::thread(&IpcExample::socket_sub_thread, this, socket_fd, socket_addr);
+
+        return 1;
+    }
+
+    int IpcExample::socket_sub_thread(int socket_fd, sockaddr_un_t socket_addr)
     {
         printf("[Subscriber] Into in the thread...\n");
+        
+        // Connect to the socket server (publisher)
+        while (connect(socket_fd, (struct sockaddr *)&socket_addr, sizeof(socket_addr)) == -1)
+        {
+            if (i < N_TRY_CONNECT_PUB)
+            {
+                printf("Trying to reconnect...\n");
+                i++;
+                sleep(1);
+            }
+            else
+            {
+                perror("Connection failed");
+                return -1;
+            }
+        }
+
+        i = 0;
+
+        printf("[Subscriber] Publisher connected. Waiting messages...\n");
+
         socket_msg_t buffer;
 
         // Read server sockets when they arrive
         while (read(socket_fd, &buffer, sizeof(buffer)) > 0)
         {
-            printf("\nNew message from publisher\n");
+            printf("\n[Subscriber] New message from publisher\n");
             printf("Server msg : %s\n", buffer.msg);
             printf("Server code: %d\n", buffer.code);
         }
@@ -153,7 +153,7 @@ namespace ipc
 
     void IpcExample::publish_socket_pub(socket_msg_t *msg, int socket_pub_fd)
     {
-        printf("\nSending message from publisher\n");
+        printf("\n[Publisher] Sending message from publisher\n");
         printf("Server msg : %s\n", msg->msg);
         printf("Server code: %d\n", msg->code);
         write(socket_pub_fd, msg, sizeof(*msg));

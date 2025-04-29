@@ -15,7 +15,7 @@ int main()
     struct sockaddr_un sock_addr;
     int sock_addrlen = sizeof(sock_addr);
 
-    socket_msg_t msg = {"Hello from server", 1024};
+    socket_msg_t msg = {"Hello OBU to ROS", 0};
 
     // Create socket
     if ((server_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
