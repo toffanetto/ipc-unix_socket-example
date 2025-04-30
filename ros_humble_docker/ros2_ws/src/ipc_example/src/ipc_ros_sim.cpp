@@ -49,13 +49,13 @@ using namespace ipc;
 int main(int argc, char **argv)
 {
 
-  rclcpp::init(argc, argv);
+    rclcpp::init(argc, argv);
 
-  auto ipc_ros_sim = std::make_shared<IpcRosSim>();
+    auto ipc_ros_sim = std::make_shared<IpcRosSim>();
 
-  rclcpp::spin(ipc_ros_sim);
+    rclcpp::spin(ipc_ros_sim);
 
-  rclcpp::shutdown();
+    rclcpp::shutdown();
 
-  return 0;
+    return 0;
 }
