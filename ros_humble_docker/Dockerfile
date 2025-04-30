@@ -1,13 +1,13 @@
 FROM ros:humble-ros-core-jammy
 
-WORKDIR /ros2_ws
-
-COPY ros2_ws/ .
-
 RUN apt update 
 
 # Installing colcon build
 RUN apt install ros-dev-tools -y
+
+WORKDIR /ros2_ws
+
+COPY ros2_ws/src src/
 
 # Build package
 RUN . "/opt/ros/$ROS_DISTRO/setup.sh" && \
