@@ -114,7 +114,7 @@ namespace ipc
         return 1;
     }
 
-    int IpcExample::socket_sub_thread(int socket_fd, sockaddr_un_t socket_addr)
+    void IpcExample::socket_sub_thread(int socket_fd, sockaddr_un_t socket_addr)
     {
         printf("[Subscriber] Into in the thread...\n");
         
@@ -130,7 +130,7 @@ namespace ipc
             else
             {
                 perror("Connection failed");
-                return -1;
+                return;
             }
         }
 
@@ -155,7 +155,7 @@ namespace ipc
             msg_pub_->publish(msg);
         }
 
-        return 1;
+        return;
     }
 
     void IpcExample::publish_socket_pub(socket_msg_t *msg, int socket_pub_fd)

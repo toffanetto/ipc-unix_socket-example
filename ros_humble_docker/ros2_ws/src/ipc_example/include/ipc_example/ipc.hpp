@@ -66,7 +66,7 @@ namespace ipc
         int create_unix_socket_sub(int &socket_fd, sockaddr_un_t &socket_addr, char *socket_path);
         int create_unix_socket_pub(int &socket_server_fd, int &socket_pub_fd, sockaddr_un_t &socket_addr, char *socket_path);
         
-        int socket_sub_thread(int socket_fd, sockaddr_un_t socket_addr);
+        void socket_sub_thread(int socket_fd, sockaddr_un_t socket_addr);
 
         void publish_socket_pub(socket_msg_t *msg, int socket_pub_fd);
 
