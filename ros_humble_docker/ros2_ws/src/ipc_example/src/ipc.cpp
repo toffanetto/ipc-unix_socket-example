@@ -9,6 +9,10 @@ namespace ipc
 
         msg_pub_ = this->create_publisher<std_msgs::msg::String>("/icp_msg", 1);
 
+        using std::placeholders::_1;
+        sub_ = this->create_subscription<std_msgs::msg::UInt8>(
+            "/ipc_data", 10, std::bind(&IpcExample::sub_callback, this, _1));
+
         i = 0;
 
         pub_timer_ = this->create_wall_timer(std::chrono::milliseconds(500),
@@ -28,6 +32,11 @@ namespace ipc
         unlink(SOCKET_PATH_PUB);
     }
 
+    void IpcExample::sub_callback(const std_msgs::msg::UInt8::SharedPtr msg)
+    {
+        i = msg->data;
+    }
+
     void IpcExample::configure_socket()
     {
         create_unix_socket_sub(socket_sub_fd, socket_sub_addr, SOCKET_PATH_SUB);
@@ -38,7 +47,6 @@ namespace ipc
     void IpcExample::pub_timer_callback()
     {
         socket_msg_t msg = {.msg = "Hello ROS to OBU", .code = i};
-        i++;
         publish_socket_pub(&msg, socket_pub_fd);
     }
 

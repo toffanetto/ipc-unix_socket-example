@@ -3,6 +3,8 @@
 
 #include "rclcpp/rclcpp.hpp"
 #include "std_msgs/msg/string.hpp"
+#include "std_msgs/msg/u_int8.hpp"
+
 
 #include <cstdlib>
 #include <cstring>
@@ -61,7 +63,10 @@ namespace ipc
         rclcpp::Publisher<std_msgs::msg::String>::SharedPtr msg_pub_;
         rclcpp::TimerBase::SharedPtr pub_timer_;
 
+        rclcpp::Subscription<std_msgs::msg::UInt8>::SharedPtr sub_;
+
         void pub_timer_callback();
+        void sub_callback(const std_msgs::msg::UInt8::SharedPtr msg);
 
         int create_unix_socket_sub(int &socket_fd, sockaddr_un_t &socket_addr, char *socket_path);
         int create_unix_socket_pub(int &socket_server_fd, int &socket_pub_fd, sockaddr_un_t &socket_addr, char *socket_path);

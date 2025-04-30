@@ -11,9 +11,16 @@ find_package(rclcpp REQUIRED)
 find_package(std_msgs REQUIRED)
 
 add_executable(ipc_node src/ipc.cpp src/ipc_node.cpp)
+add_executable(ipc_ros_sim src/ipc_ros_sim.cpp )
+
 target_include_directories(ipc_node PUBLIC
   $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
   $<INSTALL_INTERFACE:include>)
+
+target_include_directories(ipc_ros_sim PUBLIC
+  $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:include>)
+
 target_compile_features(ipc_node PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
 ament_target_dependencies(
   ipc_node
@@ -21,7 +28,14 @@ ament_target_dependencies(
   "std_msgs"
 )
 
-install(TARGETS ipc_node
+target_compile_features(ipc_ros_sim PUBLIC c_std_99 cxx_std_17)  # Require C99 and C++17
+ament_target_dependencies(
+  ipc_ros_sim
+  "rclcpp"
+  "std_msgs"
+)
+
+install(TARGETS ipc_node ipc_ros_sim
   DESTINATION lib/${PROJECT_NAME})
 
 if(BUILD_TESTING)
