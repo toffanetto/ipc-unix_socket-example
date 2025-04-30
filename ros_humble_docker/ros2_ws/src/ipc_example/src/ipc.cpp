@@ -146,6 +146,13 @@ namespace ipc
             printf("\n[Subscriber] New message from publisher\n");
             printf("Server msg : %s\n", buffer.msg);
             printf("Server code: %d\n", buffer.code);
+
+            std_msgs::msg::String msg;
+            sprintf(buffer.msg, "%s  | Code: %d",buffer.msg, buffer.code);
+            msg.data = std::string(buffer.msg);
+            // RCLCPP_INFO(this->get_logger(), "Publishing IPC message | %d", buffer.code);
+            // RCLCPP_INFO(this->get_logger(), buffer.msg);
+            msg_pub_->publish(msg);
         }
 
         return 1;
