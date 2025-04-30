@@ -12,17 +12,50 @@ UNIX-Socket client
 typedef void (*subscriber_callback_t)(const socket_msg_t *msg);
 
 // Creating struct with args for thread
-typedef struct{
+typedef struct
+{
     int sock_fd;
     subscriber_callback_t callback;
 } subscriber_args_t;
 
-// Defining callback
-void subscriber_callback(const socket_msg_t *msg)
+int configure_subscriber_socket(int *socket_fd, sockaddr_un_t *socket_addr)
 {
-    printf("\nNew message from publisher\n");
-    printf("Server msg : %s\n", msg->msg);
-    printf("Server code: %d\n", msg->code);
+    // Create socket
+    if ((*socket_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
+    {
+        perror("Socket creation error");
+        return -1;
+    }
+
+    // Initializing socket structure with zeros
+    memset(socket_addr, 0, sizeof(*socket_addr));
+
+    // Selection UNIX domain socket type
+    socket_addr->sun_family = AF_UNIX;
+
+    // Setting socket address path
+    strncpy(socket_addr->sun_path, SOCKET_PATH_SUB, strlen(SOCKET_PATH_SUB));
+
+    printf("%s\n", SOCKET_PATH_SUB);
+
+    int i = 0;
+
+    // Connect to the socket server (publisher)
+    while (connect(*socket_fd, (struct sockaddr *)socket_addr, sizeof(*socket_addr)) == -1)
+    {
+        if (i < 300)
+        {
+            printf("Trying to reconnect...\n");
+            i++;
+            sleep(1);
+        }
+        else
+        {
+            perror("Connection failed");
+            return -1;
+        }
+    }
+    printf("[Subscriber] Publisher connected. Waiting messages...\n");
 }
 
 // Defining thread
@@ -41,47 +74,25 @@ void *subscriber_thread(void *arg)
     }
 }
 
+
+// Defining callback
+void subscriber_callback(const socket_msg_t *msg)
+{
+    printf("\nNew message from publisher\n");
+    printf("Server msg : %s\n", msg->msg);
+    printf("Server code: %d\n", msg->code);
+}
+
+
+
 int main()
 {
     int sock_fd = 0;
-    struct sockaddr_un sock_addr;
-    int sock_addrlen = sizeof(sock_addr);
+    sockaddr_un_t sock_addr;
 
-    int i = 0;
-    // Create socket
-    if ((sock_fd = socket(AF_UNIX, SOCK_STREAM, 0)) == -1)
-    {
-        perror("Socket creation error");
+    if(configure_subscriber_socket(&sock_fd, &sock_addr) == -1){
         return -1;
     }
-
-    // Initializing socket structure with zeros
-    memset(&sock_addr, 0, sock_addrlen);
-
-    // Selection UNIX domain socket type
-    sock_addr.sun_family = AF_UNIX;
-
-    // Setting socket address path
-    strncpy(sock_addr.sun_path, SOCKET_PATH_SUB, strlen(SOCKET_PATH_SUB));
-
-    printf("%s\n",SOCKET_PATH_SUB);
-
-    // Connect to the socket server (publisher)
-    while (connect(sock_fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1)
-    {
-        if (i < 300)
-        {
-            printf("Trying to reconnect...\n");
-            i++;
-            sleep(1);
-        }
-        else
-        {
-            perror("Connection failed");
-            return -1;
-        }
-    }
-    printf("[Subscriber] Publisher connected. Waiting messages...\n");
 
     // Creating thread handler
     pthread_t subscriber_thread_handler;
@@ -97,7 +108,8 @@ int main()
     }
 
     // Keep going on main...
-    for (int i = 0; i<20; i++){
+    for (int i = 0; i < 20; i++)
+    {
         printf("[Main] doing some stuff\n");
         sleep(1);
     }

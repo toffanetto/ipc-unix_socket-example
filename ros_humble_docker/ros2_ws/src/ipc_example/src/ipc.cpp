@@ -143,6 +143,8 @@ namespace ipc
         // Read server sockets when they arrive
         while (read(socket_fd, &buffer, sizeof(buffer)) > 0)
         {
+            // * Call callback function or execute code...
+
             printf("\n[Subscriber] New message from publisher\n");
             printf("Server msg : %s\n", buffer.msg);
             printf("Server code: %d\n", buffer.code);

@@ -19,9 +19,9 @@ typedef struct socket_msg
     int code;
 } socket_msg_t;
 
+typedef struct sockaddr_un sockaddr_un_t;
 
-
-
-
-
+int configure_subscriber_socket(int *, sockaddr_un_t *);
+int configure_publisher_socket(int *, int *, sockaddr_un_t *);
+void publish_socket(int , socket_msg_t *);
 

@@ -26,7 +26,7 @@ typedef struct socket_msg
     int code;
 } socket_msg_t;
 
-typedef struct sockaddr_un sockaddr_un_t;;
+typedef struct sockaddr_un sockaddr_un_t;
 
 // Creating struct with args for thread
 typedef struct{
