@@ -69,7 +69,7 @@ int main()
     // Connect to the socket server (publisher)
     while (connect(sock_fd, (struct sockaddr *)&sock_addr, sizeof(sock_addr)) == -1)
     {
-        if (i < 30)
+        if (i < 300)
         {
             printf("Trying to reconnect...\n");
             i++;

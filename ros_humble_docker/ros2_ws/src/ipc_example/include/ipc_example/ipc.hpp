@@ -18,7 +18,7 @@
 #define SOCKET_PATH_SUB "/tmp/socket_obu2ros"
 #define SOCKET_PATH_PUB "/tmp/socket_ros2obu"
 
-#define N_TRY_CONNECT_PUB 30
+#define N_TRY_CONNECT_PUB 300
 
 typedef struct socket_msg
 {
