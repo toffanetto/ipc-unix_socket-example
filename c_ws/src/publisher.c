@@ -61,7 +61,7 @@ int main()
 
     // Publishing
     printf("[Publisher] Subscriber connected. Sending messages...\n");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 255; i++)
     {
         msg.code = i;
         printf("\nSending message from publisher\n");
